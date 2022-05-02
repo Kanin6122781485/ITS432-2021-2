@@ -10,7 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { initializeApp } from "firebase/app";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getDatabase, push, set, get } from "firebase/database";
+import { getDatabase, push, set, get, update } from "firebase/database";
 import { ref as databaseRef }  from "firebase/database";
 import uuid from 'uuid';
 import Moment from 'moment';
@@ -248,6 +248,29 @@ export default function App() {
     });
   }
   
+  let Postdata = []
+  let Userdata = []
+
+  if(postData){
+    Object.keys(postData).forEach(key => {
+      Postdata.push(
+        { data: postData[key],
+          id: key,
+        })
+    })
+   // console.log(Postdata)
+  }
+
+  if(userData){
+    Object.keys(userData).forEach(key => {
+      Userdata.push(
+        { data: userData[key],
+          uid: userData[key].uid,
+          id: key,
+        })
+    })
+    //console.log(Userdata)
+  }
   function loginSuccess() {
     isLoggedInSet(true);
     readDatabase();
@@ -279,29 +302,6 @@ export default function App() {
   }
   
   function HomeScreen({ navigation }) {
-    let Postdata = []
-    let Userdata = []
-
-    if(postData){
-      Object.keys(postData).forEach(key => {
-        Postdata.push(
-          { data: postData[key],
-            id: key,
-          })
-      })
-     // console.log(Postdata)
-    }
-
-    if(userData){
-      Object.keys(userData).forEach(key => {
-        Userdata.push(
-          { data: userData[key],
-            uid: userData[key].uid,
-          })
-      })
-      //console.log(Userdata)
-      
-    }
 
     function getProfilePictureByUID(value){
       let photoURL;
@@ -442,8 +442,20 @@ export default function App() {
 
     const setDisplayName = () => {
       currentUserSet(inputValue);
-      updateProfile(auth.currentUser, {
-        displayName: inputValue,
+      Userdata.forEach(data => {
+        if(data.data.uid === auth.currentUser.uid){
+          const database = getDatabase();
+          const updateData = {
+            displayname: inputValue,
+            photoURL: data.data.photoURL,
+            text: data.data.text,
+            uid: data.data.uid,
+          };
+          const updates = {};
+          updates['/users/' + data.id] = updateData;
+          update(databaseRef(database), updates);
+          alert("Done");
+        }
       })
     };
 
@@ -452,7 +464,21 @@ export default function App() {
     };
 
     const setDescription = () => {
-      
+      Userdata.forEach(data => {
+        if(data.data.uid === auth.currentUser.uid){
+          const database = getDatabase();
+          const updateData = {
+            displayname: data.data.displayname,
+            photoURL: data.data.photoURL,
+            text: inputValueDes,
+            uid: data.data.uid,
+          };
+          const updates = {};
+          updates['/users/' + data.id] = updateData;
+          update(databaseRef(database), updates);
+          alert("Done");
+        }
+      })
     };
 
     const pickImage = async () => {
@@ -478,7 +504,19 @@ export default function App() {
           console.log(uploadUrl);
 
           Userdata.forEach(data => {
-
+            if(data.data.uid === auth.currentUser.uid){
+              const database = getDatabase();
+              const updateData = {
+                displayname: data.data.displayname,
+                photoURL: uploadUrl,
+                text: data.data.text,
+                uid: data.data.uid,
+              };
+              const updates = {};
+              updates['/users/' + data.id] = updateData;
+              update(databaseRef(database), updates);
+              alert("Done");
+            }
           })
         }
       } catch (e) {
@@ -486,9 +524,25 @@ export default function App() {
         alert("Upload failed, sorry :(");
       }
     };
+    
+    let currentUserData = [];
+    
+    Userdata.forEach(data => {
+        if(data.data.uid === auth.currentUser.uid){
+          currentUserData.push(data.data)
+        }
+    })
+    
+    console.log(currentUserData)
+
 
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text>Profile</Text>
+        <Text>Display Name: {currentUserData[0].displayname}</Text>
+        <Text>Description: {currentUserData[0].text}</Text>
+        <Image style= {styles.profileImage} source={{ url: currentUserData[0].photoURL }}/>
+        
         <Text>Profile Setting</Text>
         <TextInput
           value={inputValue}
@@ -519,37 +573,7 @@ export default function App() {
   }
 
   function ProfileScreen(props) { 
-    const [inputValue, setInputValue] = useState('');
 
-    const onChange = (value) => {
-      setInputValue(value);
-    };
-
-    const setDisplayName = () => {
-      currentUserSet(inputValue);
-      updateProfile(auth.currentUser, {
-        displayName: inputValue,
-      })
-    };
-
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <TextInput
-          value={inputValue}
-          onChangeText={onChange}
-          placeholder={"Set New Display Name Here..."}
-        />
-        <Button onPress={setDisplayName} title="Change Display Name" />
-        <Button
-          onPress={() => {
-            signOut(auth);
-            isLoggedInSet(false);
-            currentUserSet('');
-          }}
-          title="Logout"
-        />
-      </View>
-    );
   }
 
   return (
