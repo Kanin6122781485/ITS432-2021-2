@@ -453,9 +453,6 @@ export default function App() {
 
     const setDescription = () => {
       
-      updateProfile(auth.currentUser.uid, {
-        displayName: inputValue,
-      })
     };
 
     const pickImage = async () => {
@@ -480,8 +477,8 @@ export default function App() {
           const uploadUrl = await uploadImageAsync(pickerResult.uri);
           console.log(uploadUrl);
 
-          updateProfile(auth.currentUser, {
-            photoURL: uploadUrl,
+          Userdata.forEach(data => {
+
           })
         }
       } catch (e) {
@@ -506,7 +503,7 @@ export default function App() {
           onChangeText={onChangeDescription}
           placeholder={"Set New Description Here..."}
         />
-        <Button onPress={setDisplayName} title="Change Description" />
+        <Button onPress={setDescription} title="Change Description" />
         <View style={{ flex: 1, justifyContent: 'flex-end', }}>
         <Button
           onPress={() => {
